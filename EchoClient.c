@@ -33,6 +33,9 @@ int main(){
 		// received from user
 		fgets(sendBuffer, sizeof(sendBuffer), stdin);
 		write(c_socket, sendBuffer, strlen(sendBuffer));
+		//
+		if(strncasecmp(sendBuffer, "quit", 4) == 0)
+			break;
 		//5. 서버에서 보낸 메시지 읽기 
 		n = read(c_socket, rcvBuffer, sizeof(rcvBuffer)); 
 		//서버에서 보내준 메세지를 rcvBuffer에 저장하고, 메세지의 길이를 리턴
