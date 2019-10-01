@@ -30,6 +30,8 @@ int main(){
 	}
 
 	//4.  send to server
+	// received from user
+	fgets(sendBuffer, sizeof(sendBuffer), stdin);
 	write(c_socket, sendBuffer, strlen(sendBuffer));
 	//5. 서버에서 보낸 메시지 읽기 
 	n = read(c_socket, rcvBuffer, sizeof(rcvBuffer)); 
