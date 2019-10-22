@@ -14,7 +14,6 @@ int main(){
 	struct sockaddr_in s_addr, c_addr;
 	int len;
 	int n;
-	FILE *fp;
 
 	// 1. 서버 소켓 생성
 	//서버 소켓 = 클라이언트의 접속 요청을 처리(허용)해 주기 위한 소켓
@@ -84,23 +83,40 @@ int main(){
 				
 			}
 			else if(!strncasecmp(rcvBuffer, "readfile ", strlen("readfile "))){
-				char * fn;
+				char *fn;
 				
-				fn = strtok(rcvBuffer, " ");
-				fn = strtok(NULL, " ");
-				
-				fp = fopen(fn, "r");
-				if(fp){
+				fn = strtok(rcvBuffer, " "); // fn = readfile
+				fn = strtok(NULL, " "); // fn = <file name>
+
+				FILE *fp = fopen(fn, "r");
+
+				if(fp){					
 					while(fgets(buffer, 255, (FILE *)fp)){
-						printf("%s", buffer);
+					printf("%s", buffer);
+					write(c_socket, buffer, strlen(buffer)); //클라이언트에게 buffer의 내용을 전송함
 					}
+				fclose(fp);
 				}
-				fclose(fp);			
+				else{ // 해당 파일이 없는 경우
+					strcpy(buffer,"해당 파일이 존재하지 않습니다.");
+				}
+			}
+			else if(!strncasecmp(rcvBuffer, "exec ", strlen("exec "))){
+				char *command;		
+				char *token;
+				token = strtok(rcvBuffer, " "); // token = exec
+				command = strtok(NULL, "\0"); //exec 뒤에 있는 모든 문자열을 command로 저장				
+				printf("command:%s\n", command);
+				int result = system(command); // command가 정상 실행되면 0을 리턴, 그렇지 않으면 0이 아닌 에러코드 리턴
+				if(!result) // 성공한 경우
+					sprintf(buffer, "[%s] 명령어가 성공했습니다.", command);
+				else
+					sprintf(buffer, "[%s] 명령어가 실패했습니다.", command);
+				
 			}
 			else
 				strcpy(buffer, "무슨 말인지 모르겠습니다.");
-				
-			write(c_socket, buffer, strlen(buffer)); //클라이언트에게 buffer의 내용을 전송함
+			write(c_socket, buffer, strlen(buffer));
 		}
 
 		close(c_socket);
