@@ -3,20 +3,26 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <sys/wait.h>
 
 #define PORT 10000
 #define BUFSIZE 10000
 char buffer[BUFSIZE] = "Hi, I'm server.\n";
 // sizeof(buffer) => 100 (배열의 크기)
 // strlen(buffer) => 15 (buffer에 저장된 문자열의 길이)
+int numClient = 0; // 현재 접속하고 있는 클라이언트의 수를 관리하는 변수
 char rcvBuffer[BUFSIZE];
 
 void do_service(int c_socket);
+void sig_handler(); // 시그널, 좀비 프로세스 x
 int main(){
 	int c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int len;
 	int n;
+
+	signal(SIGCHLD, sig_handler); // 첫번째 인자: 시그널번호, 시그널이름, 두번째 인자: 첫번째 인자의 시그널이 발생했을 때 실행되는 함수명
 
 	// 1. 서버 소켓 생성
 	//서버 소켓 = 클라이언트의 접속 요청을 처리(허용)해 주기 위한 소켓
@@ -49,19 +55,22 @@ int main(){
 		c_socket = accept(s_socket, (struct sockaddr *)&c_addr, &len); 
 		//클라이언트의 요청이 오면 허용(accept)해 주고, 해당 클라이언트와 통신할 수 있도록 클라이언트 소켓(c_socket)을 반환함.
 		
+		printf("/client is connected\n");
+		numClient++;
+		printf("현재 접속 중인 클라이언트 수: %d\n",numClient);
+
 		int pid = fork();
 		if(pid > 0){ // Parent Process
-			close(c_socket);
 			continue;
 		}
 		else if(pid == 0){ // Child Process
-			close(s_socket);
 			do_service(c_socket);
 			exit(0);
 		}
-		printf("/client is connected\n");
-		printf("클라이언트 접속 허용\n");
-		do_service(c_socket);
+		else{
+			printf("fork() failed\n");
+			exit(0);
+		}
 
 	}
 	close(s_socket);
@@ -146,4 +155,13 @@ void do_service(int c_socket){
 		}
 			close(c_socket);
 
+}
+void sig_handler(int signo){
+	int pid;
+	int status;
+	pid = wait(&status); // 자식 프로세스가 종료될 때까지 기다려 주는 wait() 함수
+
+	printf("pid[%d] is terminated.status = %d\n",pid, status);
+	numClient--;
+	printf("현재 접속 중인 클라이언트 수: %d", numClient);
 }
