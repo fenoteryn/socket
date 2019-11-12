@@ -2,6 +2,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define PORT 10000
 #define BUFSIZE 10000
@@ -56,7 +57,7 @@ int main(){
 		else if(pid == 0){ // Child Process
 			close(s_socket);
 			do_service(c_socket);
-			// exit(0);
+			exit(0);
 		}
 		printf("/client is connected\n");
 		printf("클라이언트 접속 허용\n");
